@@ -2,6 +2,12 @@
 //  AMI'S DAY  -  a little 8-bit style day-out game for native Windows
 //  Pure Win32 + GDI + winmm (no external libraries). All art and sound effects
 //  are generated in code; the background music is embedded in the executable.
+//  Music by Toby Fox.
+//
+//  Build in an MSYS2 UCRT64 shell with the MinGW-w64 UCRT64 toolchain:
+//    printf '101 RCDATA "music.mp3"\n102 ICON "soul.ico"\n' > resources.rc
+//    windres resources.rc -O coff -o resources.o
+//    g++ -std=c++17 -O2 -s -mwindows -static -o AmisDay.exe main.cpp resources.o -lgdi32 -luser32 -lwinmm
 //
 //  Controls:  Arrow keys = walk    Z = interact / confirm    X = cancel
 //             M = music on/off     F11 = fullscreen
@@ -18,13 +24,14 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
-#include "resource.h"
 
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "user32.lib")
 
 // ------------------------------------------------------------------ config
+static constexpr int IDR_MUSIC = 101;
+static constexpr WORD IDI_GAME = 102;
 static const int VW = 320, VH = 240, TS = 16;
 static const int MAXW = 34, MAXH = 26;
 
@@ -1527,6 +1534,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int nShow) {
 
     WNDCLASSA wc = {};
     wc.lpfnWndProc = WndProc; wc.hInstance = hInst; wc.hCursor = LoadCursor(nullptr, IDC_ARROW); wc.lpszClassName = "AmisDayWnd";
+    wc.hIcon = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_GAME));
     RegisterClassA(&wc);
     RECT r = { 0, 0, VW * 3, VH * 3 };
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);

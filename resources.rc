@@ -1,3 +1,0 @@
-#include "resource.h"
-
-IDR_MUSIC RCDATA "music.mp3"
