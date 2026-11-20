@@ -155,6 +155,7 @@ static std::vector<std::string> Wrap(const std::string& s, int maxc) {
 
 // ------------------------------------------------------------------ keyboard
 static bool g_kd[256], g_kp[256];
+// Keep the previous key state so menus can react once per press while walking responds to held keys.
 static void PollKeys() { for (int i = 0; i < 256; ++i) { g_kp[i] = g_kd[i]; g_kd[i] = (GetAsyncKeyState(i) & 0x8000) != 0; } }
 static inline bool Down(int vk) { return g_kd[vk & 255]; }
 static inline bool Pressed(int vk) { return g_kd[vk & 255] && !g_kp[vk & 255]; }
@@ -210,6 +211,7 @@ static void MusicStop() {
     }
     if (g_musicFile[0] && DeleteFileW(g_musicFile)) g_musicFile[0] = L'\0';
 }
+// Extract the embedded MP3 to a temporary file so the MCI player can open it by path.
 static void MusicStart(HWND hwnd) {
     HMODULE module = GetModuleHandleW(NULL);
     HRSRC resource = FindResourceW(module, MAKEINTRESOURCEW(IDR_MUSIC), MAKEINTRESOURCEW(10));
@@ -808,6 +810,7 @@ static void DrawHintBubble(int sx, int sy) {
     DrawChar(x + 3, y + 1, 'Z', RGB32(40,40,90), 1);
 }
 
+// Clamp the camera to the map and draw scenery and Ami in vertical order to simulate depth.
 static void RenderWorld(bool showHint) {
     int camX = (int)(g_pl.x + 8) - VW / 2, camY = (int)(g_pl.y + 8) - VH / 2;
     camX = std::max(0, std::min(camX, g_sc.w * TS - VW));
@@ -1005,6 +1008,7 @@ static void Ask(const std::string& prompt, std::vector<std::string> opts, std::f
     g_mPrompt = prompt; g_mOpts = std::move(opts); g_mSel = 0; g_mDone = done; g_state = ST_MENU;
 }
 static void AskName(std::function<void(bool)> done, const std::string& initial = "") { g_nameBuf = initial; g_nameDone = done; g_nameGuard = 10; g_state = ST_NAMING; }
+// Keep drawing the current view during fade-out. Swap scenes in the middle and resume after fade-in.
 static void Transition(std::function<void()> mid, std::function<void()> after = nullptr) {
     g_viewState = g_state; g_fadeMid = mid; g_afterFadeCb = after; g_state = ST_FADE_OUT;
 }
@@ -1157,6 +1161,7 @@ static void ResetGame() {
     g_interior = -1; g_fade = 0; g_state = ST_TITLE; g_endPage = 0;
 }
 
+// Check the required visits for the current time of day. The afternoon requires both stops.
 static bool PeriodDone() {
     switch (g_period) {
     case P_MORNING:   return g_visited[B_OTTOS] || g_visited[B_CUSTOM];
@@ -1342,6 +1347,7 @@ static void Interact(int id) {
 }
 
 // ------------------------------------------------------------------ update
+// Normalize diagonal input to keep walking speed fixed. Test each axis separately to allow sliding along obstacles.
 static void UpdateWalk() {
     float dx = (float)((int)Down(VK_RIGHT) - (int)Down(VK_LEFT)), dy = (float)((int)Down(VK_DOWN) - (int)Down(VK_UP));
     g_pl.moving = (dx != 0 || dy != 0);
@@ -1452,6 +1458,7 @@ static void Render() {
 }
 
 // ------------------------------------------------------------------ Win32 plumbing
+// Fit the fixed-size pixel buffer into the client area while preserving its aspect ratio.
 static void Present(HDC dc) {
     RECT rc; GetClientRect(g_hwnd, &rc);
     int cw = rc.right - rc.left, ch = rc.bottom - rc.top;
